@@ -2,27 +2,38 @@
   "expo": {
     "name": "CwmpasOT",
     "slug": "CwmpasOT",
+    "owner": "cwmpas",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/CwmpasLogoSquare.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/CwmpasLogoSquare.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#B8A2C7"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.x01boycda.cwmpasot",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      }
+        "foregroundImage": "./assets/CwmpasLogoSquare.png",
+        "backgroundColor": "#B8A2C7"
+      },
+      "package": "com.x01boycda.cwmpasot"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "56e6c2d2-574a-476e-9ffd-7bfe292a969c"
+      }
     }
   }
 }
