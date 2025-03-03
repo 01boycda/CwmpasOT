@@ -1,3 +1,4 @@
+/*
 import { createContext, useContext, useEffect, useState } from "react";
 import { Platform } from "react-native";
 import Purchases, { LOG_LEVEL, PurchasesPackage, CustomerInfo } from "react-native-purchases";
@@ -107,3 +108,4 @@ export const RevenueCatProvider = ({ children }: any) => {
 
     return <RevenueCatContext.Provider value={value}>{children}</RevenueCatContext.Provider>
 }
+    */

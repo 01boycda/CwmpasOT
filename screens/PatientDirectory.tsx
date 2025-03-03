@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Alert, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 
@@ -197,7 +197,6 @@ const PatientDirectory: React.FC = () => {
 
         switch (paywallResult) {
             case PAYWALL_RESULT.NOT_PRESENTED:
-                return true;
             case PAYWALL_RESULT.ERROR:
             case PAYWALL_RESULT.CANCELLED:
                 return false;
@@ -210,10 +209,9 @@ const PatientDirectory: React.FC = () => {
     }
 
     const addPatient = async () => {
-        if (await isSubscribed) {
-            Alert.alert("Access Granted");
-            () => navigation.navigate("AddPatient");
-        }
+        if(await isSubscribed()) navigation.navigate("AddPatient");
+        else Alert.alert("Subscription Required");
+        
     }
 
     return (

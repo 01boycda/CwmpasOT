@@ -24,7 +24,6 @@ import About from "./screens/About";
 
 // Custom Components
 import { BackButton, HomeButton, HomeButtonArrow } from "./components/HeaderButtons";
-import { RevenueCatProvider } from "./RevenueCatProvider";
 
 const Stack = createStackNavigator<RootStackParamList>();
 const Navigator: React.FC = () => {
