@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Alert, StyleSheet, Text, View } from "react-native";
+import { Alert, Platform, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 
 import * as SQLite from "expo-sqlite";
@@ -13,13 +13,12 @@ import { DATABASE_NAME } from "../constants/constantValues";
 
 import { Patient, ScreenNavigationProp } from "../constants/types";
 
-// RevenueCat
-import RevenueCatUI, { PAYWALL_RESULT } from "react-native-purchases-ui";
-
 // Custom components
 import PatientDirectoryButton from "../components/PatientDirectoryButton";
 import CustomScrollView from "../components/CustomScrollView";
 import GradientButton from "../components/GradientButton";
+import Purchases from "react-native-purchases";
+import RevenueCatUI from "react-native-purchases-ui";
 
 const PatientDirectory: React.FC = () => {
     // Navigation
@@ -181,6 +180,21 @@ const PatientDirectory: React.FC = () => {
         } catch (e) {
             console.log("Failed to get patient data:\n", e)
         }
+
+        checkSubscriptionStatus();
+    }
+
+    const checkSubscriptionStatus = async () => {
+        try {
+            const customerInfo = await Purchases.getCustomerInfo();
+
+            if (typeof customerInfo.entitlements.active["full_access"] === "undefined") {
+                RevenueCatUI.presentPaywall();
+            }
+        } catch (error) {
+            Alert.alert("RC Error");
+            console.log("RC Error:", error);
+        }
     }
 
     useFocusEffect(
@@ -189,30 +203,7 @@ const PatientDirectory: React.FC = () => {
         }, [])
     );
 
-    const isSubscribed = async () => {
-        const paywallResult: PAYWALL_RESULT =
-            await RevenueCatUI.presentPaywallIfNeeded({
-                requiredEntitlementIdentifier: "full_access",
-            });
-
-        switch (paywallResult) {
-            case PAYWALL_RESULT.NOT_PRESENTED:
-            case PAYWALL_RESULT.ERROR:
-            case PAYWALL_RESULT.CANCELLED:
-                return false;
-            case PAYWALL_RESULT.PURCHASED:
-            case PAYWALL_RESULT.RESTORED:
-                return true;
-            default:
-                return false;
-        }
-    }
-
-    const addPatient = async () => {
-        if(await isSubscribed()) navigation.navigate("AddPatient");
-        else Alert.alert("Subscription Required");
-        
-    }
+    
 
     return (
         <LinearGradient
@@ -251,7 +242,7 @@ const PatientDirectory: React.FC = () => {
             }
 
             <View>
-                <GradientButton onPress={addPatient} text="Add User" type="selected" />
+                <GradientButton onPress={() => navigation.navigate("AddPatient")} text="Add User" type="selected" />
             </View>
         </LinearGradient>
     )

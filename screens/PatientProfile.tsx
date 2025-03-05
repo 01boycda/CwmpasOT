@@ -1,6 +1,6 @@
-import React, { useLayoutEffect, useState } from "react";
-import { Dimensions, Modal, Pressable, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import React, { useEffect, useLayoutEffect, useState } from "react";
+import { Alert, Dimensions, Modal, Platform, Pressable, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
 import { FontAwesome, FontAwesome5, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -12,6 +12,8 @@ import { BORDER_WIDTH } from "../constants/constantValues";
 
 import CustomScrollView from "../components/CustomScrollView";
 import GradientButton from "../components/GradientButton";
+import Purchases from "react-native-purchases";
+import RevenueCatUI, { PAYWALL_RESULT } from "react-native-purchases-ui";
 
 const functionalityDesc = {
     "Prompting": "At the \"Prompting\" level, I can usually do many tasks on my own but sometimes need a gentle reminder to get started. I can plan and work towards completing everyday activities like getting dressed, eating, or having a conversation, but I may need help if a problem comes up. I can follow simple instructions and find things in obvious places, but I might struggle with longer directions or searching beyond where I normally look. I do best when things are clear and straightforward, but I can have trouble understanding when something feels unclear or hard to follow.",
@@ -52,7 +54,7 @@ const PatientProfile: React.FC = () => {
 
     const IconButton = ({ onPress, text, icon, size }: IconButtonProps) => {
         return (
-            <TouchableOpacity style={{flex: 1}} onPress={onPress}>
+            <TouchableOpacity style={{ flex: 1 }} onPress={onPress}>
                 <LinearGradient
                     style={styles.iconButton}
                     colors={[COLOURS.buttonTop, COLOURS.buttonBottom]}
@@ -72,6 +74,24 @@ const PatientProfile: React.FC = () => {
         });
         setInfoBox(0);
     }, [navigation, showInfo]);
+
+    // Check if subscribed whenever page loaded
+    useFocusEffect(() => {
+        checkSubscriptionStatus();
+    })
+
+    const checkSubscriptionStatus = async () => {
+        try {
+            const customerInfo = await Purchases.getCustomerInfo();
+
+            if (typeof customerInfo.entitlements.active["full_access"] === "undefined") {
+                navigation.popToTop();
+            }
+        } catch (error) {
+            Alert.alert("RC Error");
+            console.log("RC Error:", error);
+        }
+    }
 
     return (
         <LinearGradient
@@ -193,7 +213,7 @@ export const styles = StyleSheet.create({
         borderWidth: BORDER_WIDTH,
         borderRadius: 10,
         borderColor: COLOURS.purpleDark,
-        
+
         alignItems: "center",
         justifyContent: "flex-end",
     },
