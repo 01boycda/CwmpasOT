@@ -72,11 +72,13 @@ const PatientInfo = () => {
 
     const saveProfile = async () => {
         try {
-            const db: SQLite.SQLiteDatabase = await SQLite.openDatabaseAsync(DATABASE_NAME);
+            const db = await SQLite.openDatabaseAsync(DATABASE_NAME);
             await db.runAsync(`UPDATE patients SET firstName = ? WHERE id = ?`, firstName, patient.id);
             await db.runAsync(`UPDATE patients SET middleNames = ? WHERE id = ?`, middleNames, patient.id);
             await db.runAsync(`UPDATE patients SET lastName = ? WHERE id = ?`, lastName, patient.id);
             await db.runAsync(`UPDATE patients SET dob = ? WHERE id = ?`, dob, patient.id);
+
+            db.closeSync();
         } catch (e) {
             console.log("Unable to update profile:\n", e)
         }
@@ -96,10 +98,17 @@ const PatientInfo = () => {
     const [deleting, setDeleting] = useState<boolean>(false);
 
     const deletePatient = async () => {
-        const db = await SQLite.openDatabaseAsync(DATABASE_NAME);
-        await db.runAsync('DELETE FROM patients WHERE id = $value', { $value: patient.id });
+        try {
+            const db = await SQLite.openDatabaseAsync(DATABASE_NAME);
+            await db.runAsync('DELETE FROM patients WHERE id = $value', { $value: patient.id });
+            await db.runAsync('DELETE FROM notes WHERE patient_id = $value', { $value: patient.id });
 
-        navigation.popToTop();
+            db.closeSync();
+
+            navigation.popToTop();
+        } catch (e) {
+            console.log("Unable to delete patient:", e);
+        }
     }
 
     // Setup keyboard spacer
@@ -196,7 +205,7 @@ const PatientInfo = () => {
                     <View style={{ rowGap: 10 }}>
                         <Text style={FONTSTYLES.inputHeaderText}>Functionality Level</Text>
                         <View style={styles.fBarContainer}>
-                            <View style={[styles.fBar, { width: `${100 - patient.fScore * 3.333}%` }]} />
+                            <View style={[styles.fBar, { width: `${100 - (patient.fScore * 3)}%` }]} />
                             <View style={{ flexDirection: "row", justifyContent: "space-evenly", height: 28 - BORDER_WIDTH }}>
                                 <View style={styles.fDivider} />
                                 <View style={styles.fDivider} />
@@ -265,7 +274,7 @@ const PatientInfo = () => {
 
                 {!editEnabled && <GradientButton onPress={() => setDeleting(true)} text="Delete Profile" type="danger" />}
 
-                <DatePicker setDateString={setDob} showPicker={showPicker} setShowPicker={setShowPicker}/>
+                <DatePicker setDateString={setDob} showPicker={showPicker} setShowPicker={setShowPicker} />
 
                 <Modal
                     animationType="slide"
@@ -279,7 +288,7 @@ const PatientInfo = () => {
                         <GradientButton onPress={() => setDeleting(false)} text="Cancel" />
                     </View>
                 </Modal>
-                
+
             </ScrollView>
         </LinearGradient >
     )

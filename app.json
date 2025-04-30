@@ -14,7 +14,7 @@
       "backgroundColor": "#B8A2C7"
     },
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.x01boycda.cwmpasot",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false

@@ -1,15 +1,16 @@
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useState } from "react";
-import { Alert, Platform, SafeAreaView, StyleSheet, View } from "react-native";
+import React, { Suspense, useEffect, useState } from "react";
+import { ActivityIndicator, Alert, Platform, SafeAreaView, StyleSheet, View } from "react-native";
 import Navigator from "./Navigator";
 
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import COLOURS from "./constants/colours";
 
+import { SQLiteProvider, openDatabaseSync } from "expo-sqlite";
+
 // RevenueCat
-import Purchases from "react-native-purchases";
-import RevenueCatUI, { PAYWALL_RESULT } from "react-native-purchases-ui";
+import Purchases, { LOG_LEVEL } from "react-native-purchases";
 Purchases.setLogLevel(Purchases.LOG_LEVEL.VERBOSE);
 
 const App = () => {
@@ -25,6 +26,7 @@ const App = () => {
   }, [loaded, error]);
 
   useEffect(() => {
+    Purchases.setLogLevel(LOG_LEVEL.DEBUG);
     if (Platform.OS === "ios") {
       if (!process.env.EXPO_PUBLIC_RC_IOS) {
         Alert.alert(
@@ -41,7 +43,7 @@ const App = () => {
           "RevenueCat API key for android not provided"
         );
       } else {
-        Purchases.configure({ apiKey: process.env.EXPO_PUBLIOC_RC_ANDROID });
+        Purchases.configure({ apiKey: process.env.EXPO_PUBLIC_RC_ANDROID });
       }
     }
   }, [])
@@ -57,7 +59,6 @@ const App = () => {
       </SafeAreaView>
       <StatusBar style="light" />
     </View>
-
   )
 }
 

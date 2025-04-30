@@ -31,21 +31,33 @@ const FunctionalityTest = () => {
     const [questionNum, setQuestionNum] = useState<number>(0);
     const [answers, setAnswers] = useState<number[]>(Array(11).fill(0));
 
-    const loadPreviousAnswers = async (): Promise<number[]> => {
-        const db = await SQLite.openDatabaseAsync(DATABASE_NAME);
-        const patientData = await db.getFirstAsync(`SELECT * FROM patients WHERE id = ${patient.id};`) as Patient;
+    const loadPreviousAnswers = async (): Promise<number[] | null> => {
+        try {
+            const db = await SQLite.openDatabaseAsync(DATABASE_NAME);
+            const patientData = await db.getFirstAsync(`SELECT * FROM patients WHERE id = ${patient.id};`) as Patient;
 
-        const latestAnswers = questions.map((question) => {
-            const key = question.sqlKey as keyof Patient;
-            return patientData[key] as number;
-        });
+            const latestAnswers = questions.map((question) => {
+                const key = question.sqlKey as keyof Patient;
+                return patientData[key] as number;
+            });
 
-        return latestAnswers;
+            db.closeSync();
+
+            return latestAnswers;
+        } catch (e) {
+            console.log("Error loading previous answer", e);
+        }
+        return null;
     }
 
     const uploadPatientAnswer = async (answer: number) => {
-        const db = await SQLite.openDatabaseAsync(DATABASE_NAME);
-        await db.runAsync(`UPDATE patients SET ${questions[questionNum].sqlKey} = ? WHERE id = ?`, answer, patient.id);
+        try {
+            const db = await SQLite.openDatabaseAsync(DATABASE_NAME);
+            await db.runAsync(`UPDATE patients SET ${questions[questionNum].sqlKey} = ? WHERE id = ?`, answer, patient.id);
+            db.closeSync();
+        } catch (e) {
+            console.log("Error uploading answer:", e);
+        }
     }
 
     const handleAnswer = (answer: number) => {
@@ -71,51 +83,59 @@ const FunctionalityTest = () => {
     }
 
     const uploadPatientFunctionality = async () => {
+        try {
+            const db: SQLite.SQLiteDatabase = await SQLite.openDatabaseAsync(DATABASE_NAME);
 
-        const db: SQLite.SQLiteDatabase = await SQLite.openDatabaseAsync(DATABASE_NAME);
+            let lastAssessment: string = new Date().toLocaleDateString();
+            await db.runAsync(`UPDATE patients SET lastAssessment = ? WHERE id = ?`, lastAssessment, patient.id);
 
-        let lastAssessment: string = new Date().toLocaleDateString();
-        await db.runAsync(`UPDATE patients SET lastAssessment = ? WHERE id = ?`, lastAssessment, patient.id);
+            let score: number = answers.reduce((total, answer) => total + answer, -questions.length);
+            await db.runAsync(`UPDATE patients SET fScore = ? WHERE id = ?`, score, patient.id);
 
-        let score: number = answers.reduce((total, answer) => total + answer, -questions.length);
-        await db.runAsync(`UPDATE patients SET fScore = ? WHERE id = ?`, score, patient.id);
+            let level: Level = "Full Assistance";
+            if (score <= 7) level = "Prompting";
+            else if (score <= 17) level = "Some Support";
+            else if (score <= 27) level = "Step-by-Step Guidance";
+            await db.runAsync(`UPDATE patients SET fLevel = ? WHERE id = ?`, level, patient.id);
 
-        let level: Level = "Full Assistance";
-        if (score <= 7) level = "Prompting";
-        else if (score <= 17) level = "Some Support";
-        else if (score <= 27) level = "Step-by-Step Guidance";
-        await db.runAsync(`UPDATE patients SET fLevel = ? WHERE id = ?`, level, patient.id);
 
-        let updatedPatient = {
-            ...patient,
-            fScore: score,
-            fLevel: level,
-            lastAssessment: lastAssessment,
 
-            cookingLevel: answers[0],
-            dressingLevel: answers[1],
-            eatingLevel: answers[2],
-            choresLevel: answers[3],
-            washingLevel: answers[4],
-            readingLevel: answers[5],
-            communicationLevel: answers[6],
-            socialisingLevel: answers[7],
-            leisureLevel: answers[8],
-            physicalLevel: answers[9],
-            cognitiveLevel: answers[10],
-        };
-        navigation.navigate("PatientProfile", { patient: updatedPatient });
+            let updatedPatient = {
+                ...patient,
+                fScore: score,
+                fLevel: level,
+                lastAssessment: lastAssessment,
+
+                cookingLevel: answers[0],
+                dressingLevel: answers[1],
+                eatingLevel: answers[2],
+                choresLevel: answers[3],
+                washingLevel: answers[4],
+                readingLevel: answers[5],
+                communicationLevel: answers[6],
+                socialisingLevel: answers[7],
+                leisureLevel: answers[8],
+                physicalLevel: answers[9],
+                cognitiveLevel: answers[10],
+            };
+            navigation.navigate("PatientProfile", { patient: updatedPatient });
+
+            db.closeSync();
+        } catch (e) {
+            console.log("Error saving results", e);
+            navigation.popToTop();
+        }
     }
 
     useFocusEffect(
         React.useCallback(() => {
-            let isActive = true;
-
             const fetchAnswers = async () => {
                 const latestAnswers = await loadPreviousAnswers();
-                if (isActive) {
-                    setAnswers(latestAnswers);
 
+                if (latestAnswers === null) navigation.goBack();
+
+                else {
+                    setAnswers(latestAnswers);
                     // Find the first index where the answer is 0 and update questionNum
                     const firstUnanswered = latestAnswers.findIndex(answer => answer === 0);
 
@@ -134,11 +154,6 @@ const FunctionalityTest = () => {
             };
 
             fetchAnswers();
-
-            return () => {
-                isActive = false;
-            };
-
         }, [])
     );
 
@@ -174,17 +189,15 @@ const FunctionalityTest = () => {
 
     const QuestionButton = ({ q, a }: { q: number, a: number }) => {
         return (
-            <>
-                <TouchableOpacity onPress={() => handleAnswer(a)} style={{ flex: 1 }}>
-                    <LinearGradient
-                        style={answers[q] === a ? [globalStyles.questionButton, {borderColor:COLOURS.redBorder}]:[globalStyles.questionButton]}
-                        colors={answers[q] === a ? [COLOURS.buttonSelectedTop, COLOURS.buttonSelectedBottom] : [COLOURS.buttonTop, COLOURS.buttonBottom]}
-                        start={{ x: 0.5, y: 0 }}
-                        end={{ x: 0.5, y: 1 }}>
-                        <Text adjustsFontSizeToFit numberOfLines={3} style={FONTSTYLES.questionText}>{questions[q].answers[a - 1]}</Text>
-                    </LinearGradient>
-                </TouchableOpacity>
-            </>
+            <TouchableOpacity onPress={() => handleAnswer(a)} style={{ flex: 1 }}>
+                <LinearGradient
+                    style={answers[q] === a ? [globalStyles.questionButton, { borderColor: COLOURS.redBorder }] : [globalStyles.questionButton]}
+                    colors={answers[q] === a ? [COLOURS.buttonSelectedTop, COLOURS.buttonSelectedBottom] : [COLOURS.buttonTop, COLOURS.buttonBottom]}
+                    start={{ x: 0.5, y: 0 }}
+                    end={{ x: 0.5, y: 1 }}>
+                    <Text adjustsFontSizeToFit style={FONTSTYLES.questionText}>{questions[q].answers[a - 1]}</Text>
+                </LinearGradient>
+            </TouchableOpacity>
         );
     }
 
@@ -196,12 +209,15 @@ const FunctionalityTest = () => {
             start={{ x: 0.5, y: 0 }}
             end={{ x: 0.5, y: 1 }}>
 
-            <Text style={FONTSTYLES.pageHeaderText}>{questions[questionNum].heading}</Text>
-            <View style={{ flex: 8, rowGap: 10 }}>
+
+            <View style={{ flex: 1, rowGap: 10 }}>
+                <Text adjustsFontSizeToFit numberOfLines={1} style={FONTSTYLES.pageHeaderText}>{questions[questionNum].heading}</Text>
+
                 <QuestionButton q={questionNum} a={1} />
                 <QuestionButton q={questionNum} a={2} />
                 <QuestionButton q={questionNum} a={3} />
                 <QuestionButton q={questionNum} a={4} />
+
                 <View style={styles.arrowsContainer}>
 
                     <GradientButton

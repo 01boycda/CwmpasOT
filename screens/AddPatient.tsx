@@ -22,6 +22,8 @@ const AddPatient = () => {
     const [middleNames, setMiddleNames] = useState<string>("");
     const [lastName, setLastName] = useState<string>("");
 
+    const [currentInput, setCurrentInput] = useState<string>("");
+
     // Date Picker Vars
     const [dob, setDob] = useState<string>("");
     const [showPicker, setShowPicker] = useState<boolean>(false);
@@ -30,6 +32,10 @@ const AddPatient = () => {
         Keyboard.dismiss();
         setShowPicker(!showPicker);
     }
+
+    useEffect(() => {
+        setCurrentInput("");
+    }, [dob]);
 
     // SQL
     const addPatient = async () => {
@@ -77,6 +83,8 @@ const AddPatient = () => {
         } catch (e) {
             console.log("Error adding patient:\n", e);
         }
+
+        db.closeSync();
     }
 
     return (
@@ -86,53 +94,84 @@ const AddPatient = () => {
                 colors={[COLOURS.backgroundGradTop, COLOURS.backgroundGradBottom]}
                 start={{ x: 0.5, y: 0 }}
                 end={{ x: 0.5, y: 1 }}>
-                <Text style={FONTSTYLES.inputHeaderText}>First Name</Text>
-                <TextInput
-                    style={globalStyles.input}
-                    onChangeText={setFirstName}
-                    placeholder={INPUT_PLACEHOLDER}
-                    returnKeyType="done"
-                    placeholderTextColor={COLOURS.purpleSoft}
-                    selectionColor={COLOURS.purpleDark}
-                />
+                {(currentInput === "" || currentInput === "First") &&
+                    <>
+                        <Text style={FONTSTYLES.inputHeaderText}>First Name</Text>
+                        <TextInput
+                            style={globalStyles.input}
+                            value={firstName}
+                            onPress={() => setCurrentInput("First")}
+                            onEndEditing={() => setCurrentInput("")}
+                            onChangeText={setFirstName}
+                            placeholder={INPUT_PLACEHOLDER}
+                            returnKeyType="done"
+                            placeholderTextColor={COLOURS.purpleSoft}
+                            selectionColor={COLOURS.purpleDark}
+                        />
+                    </>
+                }
 
-                <Text style={FONTSTYLES.inputHeaderText}>Middle Names</Text>
-                <TextInput
-                    style={globalStyles.input}
-                    onChangeText={setMiddleNames}
-                    placeholder={INPUT_PLACEHOLDER}
-                    returnKeyType="done"
-                    placeholderTextColor={COLOURS.purpleSoft}
-                    selectionColor={COLOURS.purpleDark}
-                />
+                {(currentInput === "" || currentInput === "Middle") &&
+                    <>
+                        <Text style={FONTSTYLES.inputHeaderText}>Middle Names</Text>
+                        <TextInput
+                            style={globalStyles.input}
+                            value={middleNames}
+                            onPress={() => setCurrentInput("Middle")}
+                            onEndEditing={() => setCurrentInput("")}
+                            onChangeText={setMiddleNames}
+                            placeholder={INPUT_PLACEHOLDER}
+                            returnKeyType="done"
+                            placeholderTextColor={COLOURS.purpleSoft}
+                            selectionColor={COLOURS.purpleDark}
+                        />
+                    </>
+                }
 
-                <Text style={FONTSTYLES.inputHeaderText}>Last Name</Text>
-                <TextInput
-                    style={globalStyles.input}
-                    onChangeText={setLastName}
-                    placeholder={INPUT_PLACEHOLDER}
-                    returnKeyType="done"
-                    placeholderTextColor={COLOURS.purpleSoft}
-                    selectionColor={COLOURS.purpleDark}
-                />
+                {(currentInput === "" || currentInput === "Last") &&
+                    <>
+                        <Text style={FONTSTYLES.inputHeaderText}>Last Name</Text>
+                        <TextInput
+                            style={globalStyles.input}
+                            value={lastName}
+                            onPress={() => setCurrentInput("Last")}
+                            onEndEditing={() => setCurrentInput("")}
+                            onChangeText={setLastName}
+                            placeholder={INPUT_PLACEHOLDER}
+                            returnKeyType="done"
+                            placeholderTextColor={COLOURS.purpleSoft}
+                            selectionColor={COLOURS.purpleDark}
+                        />
+                    </>
+                }
 
-                <Text style={FONTSTYLES.inputHeaderText}>Date of Birth</Text>
-                <Pressable onPress={toggleDatePicker}>
-                    <TextInput
-                        style={globalStyles.input}
-                        placeholder={INPUT_PLACEHOLDER}
-                        value={dob}
-                        placeholderTextColor={COLOURS.purpleSoft}
-                        editable={false}
-                        onPressIn={toggleDatePicker}
-                    />
-                </Pressable>
+                {(currentInput === "" || currentInput === "DOB") &&
+                    <>
+                        <Text style={FONTSTYLES.inputHeaderText}>Date of Birth</Text>
+                        <Pressable onPress={toggleDatePicker}>
+                            <TextInput
+                                style={globalStyles.input}
+                                onPress={() => setCurrentInput("DOB")}
+                                onEndEditing={() => setCurrentInput("")}
+                                placeholder={INPUT_PLACEHOLDER}
+                                value={dob}
+                                placeholderTextColor={COLOURS.purpleSoft}
+                                editable={false}
+                                onPressIn={toggleDatePicker}
+                            />
+                        </Pressable>
+                    </>
+                }
 
-                <View style={{ flex: 1, justifyContent: 'flex-end' }}>
-                    <GradientButton onPress={addPatient} text="Create User" type={(firstName === "" || lastName === "" || dob === "") ? "disabled" : "normal"} />
-                </View>
+                {currentInput === "" &&
+                    <>
+                        <View style={{ flex: 1, justifyContent: 'flex-end' }}>
+                            <GradientButton onPress={addPatient} text="Create User" type={(firstName === "" || lastName === "" || dob === "") ? "disabled" : "normal"} />
+                        </View>
+                    </>
+                }
 
-                <DatePicker setDateString={setDob} showPicker={showPicker} setShowPicker={setShowPicker}/>
+                <DatePicker setDateString={setDob} showPicker={showPicker} setShowPicker={setShowPicker} />
 
             </LinearGradient>
         </TouchableWithoutFeedback >

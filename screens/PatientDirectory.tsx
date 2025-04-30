@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { Alert, Platform, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 
 import * as SQLite from "expo-sqlite";
 import { LinearGradient } from "expo-linear-gradient";
-import { FontAwesome5 } from "@expo/vector-icons";
+import { AntDesign, FontAwesome5 } from "@expo/vector-icons";
 
 import COLOURS from "../constants/colours";
-import FONTSTYLES from "../constants/fontstyles";
 import globalStyles from "../constants/styles";
 import { DATABASE_NAME } from "../constants/constantValues";
 
@@ -17,13 +16,14 @@ import { Patient, ScreenNavigationProp } from "../constants/types";
 import PatientDirectoryButton from "../components/PatientDirectoryButton";
 import CustomScrollView from "../components/CustomScrollView";
 import GradientButton from "../components/GradientButton";
-import Purchases from "react-native-purchases";
-import RevenueCatUI from "react-native-purchases-ui";
+import Purchases, { LOG_LEVEL } from "react-native-purchases";
+import RevenueCatUI, { PAYWALL_RESULT } from "react-native-purchases-ui";
 
 const PatientDirectory: React.FC = () => {
     // Navigation
     const navigation = useNavigation<ScreenNavigationProp>();
     const [patients, setPatients] = useState<Patient[]>([]);
+    const [paywallResult, setPaywallResult] = useState<PAYWALL_RESULT>()
 
     const loadPatientData = async () => {
         const db = await SQLite.openDatabaseAsync(DATABASE_NAME);
@@ -170,6 +170,16 @@ const PatientDirectory: React.FC = () => {
                     eventBerlin TEXT,
                     eventChernobyl TEXT,
                     eventGulf TEXT);`);
+
+            // Create table if not existing
+            await db.execAsync(`
+                CREATE TABLE IF NOT EXISTS notes (
+                    id INTEGER PRIMARY KEY NOT NULL,
+                    patient_id INTEGER REFERENCES patients(id),
+                    activity TEXT NOT NULL,
+                    section NUMBER NOT NULL,
+                    note TEXT NOT NULL);`
+            );
         } catch (e) {
             console.log("Failed to create new table:\n", e)
         }
@@ -180,30 +190,59 @@ const PatientDirectory: React.FC = () => {
         } catch (e) {
             console.log("Failed to get patient data:\n", e)
         }
-
-        checkSubscriptionStatus();
+        db.closeSync();
     }
 
-    const checkSubscriptionStatus = async () => {
-        try {
-            const customerInfo = await Purchases.getCustomerInfo();
+    const SubscriptionButton = ({ subscribed }: { subscribed: boolean }) => {
+        return (
+            <Pressable style={globalStyles.headerButtonContainer} onPress={() => checkSubscriptionStatus(true)}>
+                <AntDesign
+                    name={subscribed ? "checkcircleo" : "exclamationcircleo"}
+                    color={subscribed ? COLOURS.white : "red"}
+                    size={30}
+                />
+            </Pressable>
+        )
+    }
 
-            if (typeof customerInfo.entitlements.active["full_access"] === "undefined") {
-                RevenueCatUI.presentPaywall();
+    const refreshSubscriptionButton = async () => {
+        const customerInfo = await Purchases.getCustomerInfo();
+        console.log("RC customer:", customerInfo);
+
+        navigation.setOptions({
+            headerLeft: () => (<SubscriptionButton
+                subscribed={typeof customerInfo.entitlements.active["full_access"] !== "undefined"}
+            />)
+        });
+    }
+
+    const checkSubscriptionStatus = async (showAlert: boolean) => {
+        try {
+            const result: PAYWALL_RESULT = await RevenueCatUI.presentPaywallIfNeeded({
+                requiredEntitlementIdentifier: "full_access",
+            });
+
+            if (result === "NOT_PRESENTED" && showAlert) {
+                Alert.alert("You Are Subscribed!");
             }
+
+            console.log("Paywall Result:", result);
+            setPaywallResult(result);
         } catch (error) {
-            Alert.alert("RC Error");
+            if (showAlert) {
+                Alert.alert("RC Error");
+            }
             console.log("RC Error:", error);
         }
-    }
+    };
 
+    useEffect(() => { refreshSubscriptionButton(); }, [paywallResult])
     useFocusEffect(
         React.useCallback(() => {
+            checkSubscriptionStatus(false);
             loadPatientData();
         }, [])
     );
-
-    
 
     return (
         <LinearGradient

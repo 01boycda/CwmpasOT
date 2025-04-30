@@ -70,8 +70,13 @@ const MemoryBook = () => {
 
     const [keyboardHeight, setKeyboardHeight] = useState<number>(0);
     useFocusEffect(() => {
-        const keyboardDidShowListener = Platform.OS === "ios" ? Keyboard.addListener('keyboardWillShow', (e) => { setKeyboardVisible(true), setKeyboardHeight(e.endCoordinates.height) }) : Keyboard.addListener('keyboardDidShow', (e) => { setKeyboardVisible(true), setKeyboardHeight(e.endCoordinates.height) });
-        const keyboardDidHideListener = Platform.OS === "ios" ? Keyboard.addListener('keyboardWillHide', () => setKeyboardVisible(false)) : Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(true));
+        const keyboardDidShowListener = Platform.OS === "ios" ?
+            Keyboard.addListener('keyboardWillShow', (e) => { setKeyboardVisible(true), setKeyboardHeight(e.endCoordinates.height) }) :
+            Keyboard.addListener('keyboardDidShow', (e) => { setKeyboardVisible(true), setKeyboardHeight(e.endCoordinates.height) });
+
+        const keyboardDidHideListener = Platform.OS === "ios" ?
+            Keyboard.addListener('keyboardWillHide', () => setKeyboardVisible(false)) :
+            Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
 
         return () => {
             keyboardDidHideListener.remove();

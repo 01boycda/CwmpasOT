@@ -26,19 +26,13 @@ const MemoryInput = ({ patient, setPatient, pageRef, sqlKey, keyboardType, place
     const inputRef = useRef<TextInput>(null);
     const [focused, setFocused] = useState<boolean>(false);
 
-    const handleFocus = () => {
-        inputRef.current?.measure((x, y, width, height, pageX, pageY) => {
-            pageRef.current?.scrollTo({ y: y - 100, animated: true });
-        });
-        setFocused(true);
-    }
-
     // Update database and patient object
     const uploadAnswer = async (answer: string) => {
         // Update database
         try {
             const db = await SQLite.openDatabaseAsync(DATABASE_NAME);
             await db.runAsync(`UPDATE patients SET ${sqlKey} = ? WHERE id = ?`, answer, patient.id);
+            db.closeSync();
         } catch (e) {
             console.log("Unable to save answer:\n", e)
         }
@@ -64,7 +58,7 @@ const MemoryInput = ({ patient, setPatient, pageRef, sqlKey, keyboardType, place
             selectionColor={COLOURS.purpleDark}
 
             // Functions
-            onFocus={handleFocus}
+            onFocus={() => setFocused(true)}
             onEndEditing={e => uploadAnswer(e.nativeEvent.text)}
         />
     )
@@ -91,6 +85,7 @@ const MemoryDateInput = ({ patient, setPatient, sqlKey }: MemoryDateProps) => {
         try {
             const db = await SQLite.openDatabaseAsync(DATABASE_NAME);
             await db.runAsync(`UPDATE patients SET ${sqlKey} = ? WHERE id = ?`, date, patient.id);
+            db.closeSync();
         } catch (e) {
             console.log("Unable to save answer:\n", e)
         }
@@ -110,8 +105,8 @@ const MemoryDateInput = ({ patient, setPatient, sqlKey }: MemoryDateProps) => {
                     {date === "" ? INPUT_PLACEHOLDER : date}
                 </Text>
             </Pressable>
-            
-            <DatePicker setDateString={setDate} showPicker={showPicker} setShowPicker={setShowPicker}/>
+
+            <DatePicker setDateString={setDate} showPicker={showPicker} setShowPicker={setShowPicker} />
         </>
     )
 }
@@ -216,8 +211,13 @@ export const FamilyPage = ({ patient, setPatient }: MemoryPageProps) => {
     const [siblings, setSiblings] = useState(true);
 
     const updateSibling = async (answer: string) => {
-        const db = await SQLite.openDatabaseAsync(DATABASE_NAME);
-        await db.runAsync(`UPDATE patients SET siblings = ? WHERE id = ?`, answer, patient.id);
+        try {
+            const db = await SQLite.openDatabaseAsync(DATABASE_NAME);
+            await db.runAsync(`UPDATE patients SET siblings = ? WHERE id = ?`, answer, patient.id);
+            db.closeSync();
+        } catch (e) {
+            console.log("Unable to update sibling:", e);
+        }
     }
 
     return (
@@ -494,8 +494,13 @@ export const MarriagePage = ({ patient, setPatient }: MemoryPageProps) => {
     const [married, setMarried] = useState(true);
 
     const updateMarried = async (answer: string) => {
-        const db = await SQLite.openDatabaseAsync(DATABASE_NAME);
-        await db.runAsync(`UPDATE patients SET married = ? WHERE id = ?`, answer, patient.id);
+        try {
+            const db = await SQLite.openDatabaseAsync(DATABASE_NAME);
+            await db.runAsync(`UPDATE patients SET married = ? WHERE id = ?`, answer, patient.id);
+            db.closeSync();
+        } catch (e) {
+            console.log("Unable to update married:", e);
+        }
     }
 
     return (

@@ -80,8 +80,13 @@ const ActivityPage: React.FC = (props: any) => {
     useEffect(() => { sectionScrollView.current?.scrollToEnd({ animated: true }); }, [keyboardVisible])
 
     useEffect(() => {
-        const keyboardDidShowListener = Platform.OS === "ios" ? Keyboard.addListener('keyboardWillShow', (e) => {setKeyboardVisible(true), setKeyboardHeight(e.endCoordinates.height)}) : Keyboard.addListener('keyboardDidShow', (e) => {setKeyboardVisible(true), setKeyboardHeight(e.endCoordinates.height)});
-        const keyboardDidHideListener = Platform.OS === "ios" ? Keyboard.addListener('keyboardWillHide', () => setKeyboardVisible(false)) : Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+        const keyboardDidShowListener = Platform.OS === "ios" ?
+            Keyboard.addListener('keyboardWillShow', (e) => { setKeyboardVisible(true), setKeyboardHeight(e.endCoordinates.height) }) :
+            Keyboard.addListener('keyboardDidShow', (e) => { setKeyboardVisible(true), setKeyboardHeight(e.endCoordinates.height) });
+
+        const keyboardDidHideListener = Platform.OS === "ios" ?
+            Keyboard.addListener('keyboardWillHide', () => setKeyboardVisible(false)) :
+            Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
 
         calculateLevel();
         // Cleanup on unmount
@@ -99,19 +104,11 @@ const ActivityPage: React.FC = (props: any) => {
         try {
             const db = await SQLite.openDatabaseAsync(DATABASE_NAME);
 
-            // Create table if not existing
-            await db.execAsync(`
-                        CREATE TABLE IF NOT EXISTS notes (
-                            id INTEGER PRIMARY KEY NOT NULL,
-                            patient_id INTEGER REFERENCES patients(id),
-                            activity TEXT NOT NULL,
-                            section NUMBER NOT NULL,
-                            note TEXT NOT NULL);`
-            );
-
             let noteData: { "note": string } | null = await db.getFirstAsync(`SELECT note FROM notes WHERE patient_id = ? AND activity = ? AND section = ?`, patient.id, activity.activityName, sectionNum);
 
             setCurrentNotes(noteData === null ? "" : noteData.note);
+
+            db.closeSync();
         } catch (e) {
             console.log("Failed to get note data:\n", e)
         }
@@ -124,7 +121,7 @@ const ActivityPage: React.FC = (props: any) => {
             const db = await SQLite.openDatabaseAsync(DATABASE_NAME);
             await db.runAsync('DELETE FROM notes WHERE patient_id = $id AND activity = $act AND section = $section', { $id: patient.id, $act: activity.activityName, $section: sectionNum });
             await db.runAsync(`INSERT INTO notes (note, patient_id, activity, section) VALUES ('${text}', '${patient.id}', '${activity.activityName}', '${sectionNum}');`);
-
+            db.closeSync();
             loadNotes();
         } catch (e) {
             console.log("Unable to save answer:\n", e)
@@ -238,7 +235,7 @@ const ActivityPage: React.FC = (props: any) => {
                         value={sectionNum}
 
                         onSlidingComplete={value => setSectionNum(value)}
-                        
+
                         minimumTrackTintColor={COLOURS.purpleDark}
                         maximumTrackTintColor={COLOURS.purpleLight}
                         thumbTintColor={COLOURS.purpleLighter}

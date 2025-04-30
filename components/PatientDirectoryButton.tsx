@@ -9,8 +9,8 @@ import FONTSTYLES from "../constants/fontstyles";
 import { LinearGradient } from "expo-linear-gradient";
 
 const PatientDirectoryButton = ({ patient, nav }: { patient: Patient, nav: ScreenNavigationProp }) => {
-    return (
 
+    return (
         <TouchableOpacity onPress={() => { nav.navigate("PatientProfile", { patient: patient }) }}>
             <LinearGradient
                 style={[globalStyles.button]}

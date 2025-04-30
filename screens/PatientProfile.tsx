@@ -73,7 +73,15 @@ const PatientProfile: React.FC = () => {
             headerRight: () => (<ProfileInfoButton />)
         });
         setInfoBox(0);
+        printInfo();
     }, [navigation, showInfo]);
+
+    const printInfo = () => {
+        console.log("Name:", patient.firstName, patient.lastName);
+        console.log("DOB:", patient.dob);
+        console.log("Level:", patient.fLevel);
+        console.log("Score:", patient.fScore);
+    }
 
     // Check if subscribed whenever page loaded
     useFocusEffect(() => {
@@ -84,12 +92,15 @@ const PatientProfile: React.FC = () => {
         try {
             const customerInfo = await Purchases.getCustomerInfo();
 
+            console.log("RC customer:", customerInfo);
+
             if (typeof customerInfo.entitlements.active["full_access"] === "undefined") {
                 navigation.popToTop();
             }
         } catch (error) {
             Alert.alert("RC Error");
             console.log("RC Error:", error);
+            navigation.popToTop();
         }
     }
 

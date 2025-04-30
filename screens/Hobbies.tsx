@@ -79,9 +79,10 @@ const Hobbies: React.FC = () => {
 
             // Create favourites list
             let favouritesData: { "activity": string }[] = await db.getAllAsync(`SELECT DISTINCT activity FROM hobbies WHERE patient_id = ${patient.id}`);
+            db.closeSync();
+
             let favouritesList: string[] = [];
             Object.values(favouritesData).forEach(a => favouritesList.push(a["activity"]));
-
             // Update favourites hook
             setFavourites(favouritesList);
         } catch (e) {
@@ -113,6 +114,8 @@ const Hobbies: React.FC = () => {
             } else {
                 await db.runAsync(`INSERT INTO hobbies (patient_id, activity) VALUES ('${patient.id}', '${activity}');`);
             }
+
+            db.closeSync();
         } catch (e) {
             console.log("Failed to get patient data:\n", e)
         }
